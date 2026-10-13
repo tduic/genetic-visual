@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: true
+      # react-scripts 2 / webpack 4 hash with md4, which OpenSSL 3 only has in the legacy provider.
+      NODE_OPTIONS: --openssl-legacy-provider
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tests
+        # src/test.js is a scratch file, not a test suite.
+        run: npm test -- --testPathIgnorePatterns='/src/test\.js$'
+      - name: Production build (includes CRA lint; warnings fail under CI=true)
+        run: npm run build
